@@ -1,6 +1,10 @@
 # TelemetricEvents
 
-**TODO: Add description**
+Changes the logging and metric paradigm to event emission rather than the 
+modules taking care of their own logging and metrics. Uses [:telemetry](https://hexdocs.pm/telemetry/)
+to recieve the events and route them to different handlers. Combines [Logger](https://hexdocs.pm/logger/Logger.html)
+and [Prometheus](https://hexdocs.pm/prometheus_ex/Prometheus.html) to process 
+the events.
 
 ## Installation
 
@@ -10,7 +14,7 @@ by adding `telemetric_events` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:telemetric_events, "~> 0.1.0"}
+    {:telemetric_events, "~> 0.0.0"}
   ]
 end
 ```
