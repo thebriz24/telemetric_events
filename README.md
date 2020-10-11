@@ -52,7 +52,7 @@ I will come back to further metric setup soon, but first I will finish up
 the values that will be placed in the configured Prometheus labels for that event
 (more on that later). The map can have any other number of key-value pairs that 
 won't effect the metrics, they will simply be added to the logs. There will also
-two forms you can use for `emit_event/2`: full event name or just the type with
+be two forms you can use for `emit_event/2`: full event name or just the type 
 with the action as part of the map. 
 `emit_event([:blog_collector, :blog, :received], any_map)` and 
 `emit_event(:blog, %{any_map | action: "received"})` respectively.

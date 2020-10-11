@@ -22,6 +22,8 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 telemetric_events-*.tar
 
+# Apple system files
+.DS_Store
 
 # Temporary files for e.g. tests
 /tmp
