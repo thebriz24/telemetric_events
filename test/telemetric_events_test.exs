@@ -3,7 +3,8 @@ defmodule TelemetricEventsTest do
   import ExUnit.CaptureLog
   alias TelemetricEvents.TestModule
 
-    setup :tear_down
+  setup :tear_down
+
   describe "setup_handler/1" do
     test "if bad module given" do
       assert_raise UndefinedFunctionError, fn ->
@@ -23,16 +24,17 @@ defmodule TelemetricEventsTest do
     end
 
     test "metric doesn't exists fails silently due to :telemetry's design" do
-      new = Application.get_env(:example, :metrics) |> Enum.concat([test: [test: []]])
+      new = Application.get_env(:example, :metrics) |> Enum.concat(test: [test: []])
       Application.put_env(:example, :metrics, new)
       TelemetricEvents.emit_event([:example, :test, :test], %{})
     end
 
     test "map doesn't have all of the labels detaches the handler and logs" do
       TelemetricEvents.setup_handler(TestModule)
-      assert capture_log( fn ->
-        TelemetricEvents.emit_event([:example, :messages, :sent], %{})
-      end) =~ "[error] Handler :telemetric_events has failed and has been detached."
+
+      assert capture_log(fn ->
+               TelemetricEvents.emit_event([:example, :messages, :sent], %{})
+             end) =~ "[error] Handler :telemetric_events has failed and has been detached."
     end
   end
 

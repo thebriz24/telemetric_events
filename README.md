@@ -2,7 +2,7 @@
 
 Changes the logging and metric paradigm to event emission rather than the 
 modules taking care of their own logging and metrics. Uses [:telemetry](https://hexdocs.pm/telemetry/)
-to recieve the events and route them to different handlers. Combines [Logger](https://hexdocs.pm/logger/Logger.html)
+to receive the events and route them to different handlers. Combines [Logger](https://hexdocs.pm/logger/Logger.html)
 and [Prometheus](https://hexdocs.pm/prometheus_ex/Prometheus.html) to process 
 the events.
 
@@ -24,6 +24,9 @@ and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/telemetric_events](https://hexdocs.pm/telemetric_events).
 
 ## Usage
+
+There is a setup function: `setup_handler/1`. The argument is a module. See 
+the Prometheus section for more information.
 
 The main function you will be interacting with is `emit_event/2`. It simply makes 
 use of `:telemetry`. 
@@ -57,6 +60,11 @@ with the action as part of the map.
 `emit_event([:blog_collector, :blog, :received], any_map)` and 
 `emit_event(:blog, %{any_map | action: "received"})` respectively.
 
+Note: If an error is raised by the functions that are given to :telemetry, the 
+handler will detach. I will try to mitigate that as much as possible, but until 
+:telemetry has a way of broadcasting that they've detached the handler, 
+mitigation is all I can do.
+
 Logging an event just uses the standard `Logger` package. In the future (as 
 needed) I will support other logging packages, but to be honest I don't know of 
 anyone that uses anything other than `Logger`. However, if you need `Logger` to 
@@ -83,10 +91,10 @@ E.g.
 }
 ```
 
-Note: Version 0.1.0 won't have the logging implemented. I'm working for a 
-company with an app that will include this package. They're not ready yet to 
-implement this logging strategy. So to get the task done, I'm skipping logging
-for now.
+Note: Version 0.1.0 won't have the logging implemented. I'm working on an app
+that will include this package. It's not at a place where it's ready to 
+implement this logging strategy. So to get it up and going, I'm skipping 
+logging for now.
 
 `Prometheus` is more hands on in it's setup. Take the configuration from above;
 where it says `metric`, you can put in a few options. Each option corresponds 
@@ -115,4 +123,4 @@ metrics.
 
 And that's about it. As long as your metrics and event match up it should just 
 work. If anything is wrong, please write an issue for it. I am planning on 
-actively developing this project since I use it at my job.
+actively developing this project.

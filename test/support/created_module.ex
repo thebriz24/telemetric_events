@@ -1,4 +1,4 @@
-  defmodule TelemetricEvents.TestModule do
-    use TelemetricEvents.Prometheus
-  end
-
+defmodule TelemetricEvents.TestModule do
+  @moduledoc false
+  use TelemetricEvents.Prometheus
+end

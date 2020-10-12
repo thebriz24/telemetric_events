@@ -13,7 +13,8 @@ defmodule TelemetricEvents.PrometheusTest do
   end
 
   describe "created functions: setup" do
-  setup :ets_setup
+    setup :ets_setup
+
     test "setup creates the proper entries in prometheus :ets table: :prometheus_counter_table." do
       assert Enum.sort(:ets.tab2list(:prometheus_counter_table)) == [
                {{:default, :mf, :received_message_count},
@@ -36,7 +37,8 @@ defmodule TelemetricEvents.PrometheusTest do
   end
 
   describe "created functions: observe" do
-  setup :ets_setup
+    setup :ets_setup
+
     test "observe messages:received updates the proper :ets table" do
       TestModule.observe([:example, :messages, :received], %{sender: "test"})
 
@@ -81,10 +83,10 @@ defmodule TelemetricEvents.PrometheusTest do
 
   defp ets_setup(_context) do
     TestModule.setup()
+
     on_exit(fn ->
       :ets.delete_all_objects(:prometheus_counter_table)
       :ets.delete_all_objects(:prometheus_histogram_table)
     end)
   end
-
 end
