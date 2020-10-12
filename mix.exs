@@ -26,8 +26,8 @@ defmodule TelemetricEvents.MixProject do
     [
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
-      {:prometheus_ex, "~> 3.0"},
-      {:telemetry, "~> 0.4"}
+      {:prometheus_ex, ">= 2.0.0 and < 4.0.0"},
+      {:telemetry, ">= 0.4.0"}
     ]
   end
 
