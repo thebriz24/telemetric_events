@@ -122,16 +122,6 @@ defmodule TelemetricEvents do
     :telemetry.attach_many(:telemetric_events, event_names, event_handler(module), [])
   end
 
-  defp event_handler(module) do
-    fn event_name, event, _metadata, _config -> module.observe(event_name, event) end
-  end
-
-  defp format_event_names({type, actions}, acc) do
-    actions
-    |> Enum.map(fn {action, _metric} -> [@app, type, action] end)
-    |> Enum.concat(acc)
-  end
-
   @doc """
   This will be the most commonly used function of this package. It simply makes
   use of `:telemetry`. `:telemetry` routes events to their handlers based on 
@@ -154,4 +144,14 @@ defmodule TelemetricEvents do
 
   def emit_event(type, %{action: action} = observation) when is_atom(type),
     do: emit_event([@app, type, action], observation)
+
+  defp event_handler(module) do
+    fn event_name, event, _metadata, _config -> module.observe(event_name, event) end
+  end
+
+  defp format_event_names({type, actions}, acc) do
+    actions
+    |> Enum.map(fn {action, _metric} -> [@app, type, action] end)
+    |> Enum.concat(acc)
+  end
 end

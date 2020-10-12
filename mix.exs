@@ -10,6 +10,7 @@ defmodule TelemetricEvents.MixProject do
       elixir: ">= 1.10.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       package: package()
     ]
   end
@@ -29,6 +30,14 @@ defmodule TelemetricEvents.MixProject do
       {:prometheus_ex, ">= 2.0.0 and < 4.0.0"},
       {:telemetry, ">= 0.4.0"}
     ]
+  end
+
+  defp elixirc_paths(env) when env == :test do
+    ["lib", "test/support"]
+  end
+
+  defp elixirc_paths(_env) do
+    ["lib"]
   end
 
   def package() do
