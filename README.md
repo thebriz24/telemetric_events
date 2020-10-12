@@ -83,6 +83,11 @@ E.g.
 }
 ```
 
+Note: Version 0.1.0 won't have the logging implemented. I'm working for a 
+company with an app that will include this package. They're not ready yet to 
+implement this logging strategy. So to get the task done, I'm skipping logging
+for now.
+
 `Prometheus` is more hands on in it's setup. Take the configuration from above;
 where it says `metric`, you can put in a few options. Each option corresponds 
 to a `Prometheus` metric type. Each has a different tuple for 

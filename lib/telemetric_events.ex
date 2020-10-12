@@ -66,6 +66,11 @@ defmodule TelemetricEvents do
   }
   ```
 
+  Note: Version 0.1.0 won't have the logging implemented. I'm working for a 
+  company with an app that will include this package. They're not ready yet to 
+  implement this logging strategy. So to get the task done, I'm skipping logging
+  for now.
+
   # Prometheus
   `Prometheus` is more hands on in it's setup. Take the configuration from 
   above; where it says `metric`, you can put in a few options. Each option 
@@ -100,8 +105,13 @@ defmodule TelemetricEvents do
   @app Application.compile_env!(:telemetric_events, :otp_app)
 
   @doc """
+  Call this function in your `application.ex` file with the module you created 
+  using `TelemetricEvents.Prometheus`.
+
+  This will setup the configured metrics and attach a handler for each event 
+  name that will route to the proper `observe/2` function. 
   """
-  @spec setup_handler(([atom()], map() -> :ok)) :: :ok
+  @spec setup_handler(atom()) :: :ok
   def setup_handler(module) do
     event_names =
       @app
