@@ -100,6 +100,29 @@ defmodule TelemetricEvents do
   @app Application.compile_env!(:telemetric_events, :otp_app)
 
   @doc """
+  """
+  @spec setup_handler(([atom()], map() -> :ok)) :: :ok
+  def setup_handler(module) do
+    event_names =
+      @app
+      |> Application.get_env(:metrics)
+      |> Enum.reduce([], &format_event_names/2)
+
+    module.setup()
+    :telemetry.attach_many(:telemetric_events, event_names, event_handler(module), [])
+  end
+
+  defp event_handler(module) do
+    fn event_name, event, _metadata, _config -> module.observe(event_name, event) end
+  end
+
+  defp format_event_names({type, actions}, acc) do
+    actions
+    |> Enum.map(fn {action, _metric} -> [@app, type, action] end)
+    |> Enum.concat(acc)
+  end
+
+  @doc """
   This will be the most commonly used function of this package. It simply makes
   use of `:telemetry`. `:telemetry` routes events to their handlers based on 
   the event name. This package uses the pattern `app`, `type`, `action` for the 

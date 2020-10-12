@@ -35,7 +35,7 @@ defmodule TelemetricEvents.MixProject do
     [
       maintainers: ["thebriz24"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/thebriz24/gen_timer"}
+      links: %{"GitHub" => "https://github.com/thebriz24/telemetric_events"}
     ]
   end
 end
