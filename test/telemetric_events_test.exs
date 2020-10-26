@@ -1,8 +1,47 @@
 defmodule TelemetricEventsTest do
   use ExUnit.Case
-  doctest TelemetricEvents
+  import ExUnit.CaptureLog
+  alias TelemetricEvents.TestModule
 
-  test "greets the world" do
-    assert TelemetricEvents.hello() == :world
+  setup :tear_down
+
+  describe "setup_handler/1" do
+    test "if bad module given" do
+      assert_raise UndefinedFunctionError, fn ->
+        TelemetricEvents.setup_handler(Bad)
+      end
+    end
+
+    test "if the right module is given" do
+      assert TelemetricEvents.setup_handler(TestModule) == :ok
+    end
+  end
+
+  describe "emit_event/2" do
+    test "unknown event_name fails silently due to :telemetry's design" do
+      TelemetricEvents.setup_handler(TestModule)
+      assert TelemetricEvents.emit_event([:example, :unknown, :unknown], %{})
+    end
+
+    test "metric doesn't exists fails silently due to :telemetry's design" do
+      new = Application.get_env(:example, :metrics) |> Enum.concat(test: [test: []])
+      Application.put_env(:example, :metrics, new)
+      TelemetricEvents.emit_event([:example, :test, :test], %{})
+    end
+
+    test "map doesn't have all of the labels detaches the handler and logs" do
+      TelemetricEvents.setup_handler(TestModule)
+
+      assert capture_log(fn ->
+               TelemetricEvents.emit_event([:example, :messages, :sent], %{})
+             end) =~ "[error] Handler :telemetric_events has failed and has been detached."
+    end
+  end
+
+  defp tear_down(_context) do
+    on_exit(fn ->
+      :ets.delete_all_objects(:prometheus_counter_table)
+      :ets.delete_all_objects(:prometheus_histogram_table)
+    end)
   end
 end

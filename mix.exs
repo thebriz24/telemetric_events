@@ -5,24 +5,46 @@ defmodule TelemetricEvents.MixProject do
     [
       app: :telemetric_events,
       version: "0.1.0",
-      elixir: "~> 1.11",
+      description:
+        "Uses `:telemetry` to take events and combines logging and Prometheus metrics to process events",
+      elixir: ">= 1.10.0",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env()),
+      package: package()
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :prometheus_ex]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
+      {:prometheus_ex, ">= 2.0.0 and < 4.0.0"},
+      {:telemetry, ">= 0.4.0"}
+    ]
+  end
+
+  defp elixirc_paths(env) when env == :test do
+    ["lib", "test/support"]
+  end
+
+  defp elixirc_paths(_env) do
+    ["lib"]
+  end
+
+  def package() do
+    [
+      maintainers: ["thebriz24"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/thebriz24/telemetric_events"}
     ]
   end
 end
