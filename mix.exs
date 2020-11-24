@@ -4,7 +4,7 @@ defmodule TelemetricEvents.MixProject do
   def project do
     [
       app: :telemetric_events,
-      version: "0.1.0",
+      version: "0.2.0",
       description:
         "Uses `:telemetry` to take events and combines logging and Prometheus metrics to process events",
       elixir: ">= 1.10.0",
@@ -27,6 +27,7 @@ defmodule TelemetricEvents.MixProject do
     [
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.22", only: [:dev, :test], runtime: false},
+      {:jason, ">= 1.0.0"},
       {:prometheus_ex, ">= 2.0.0 and < 4.0.0"},
       {:telemetry, ">= 0.4.0"}
     ]

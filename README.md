@@ -96,6 +96,22 @@ that will include this package. It's not at a place where it's ready to
 implement this logging strategy. So to get it up and going, I'm skipping 
 logging for now.
 
+Note: As of version 0.2.0 this form of logging has been implemented.  To 
+configure it for compile time, add this to your config: 
+```
+config :logger,
+  translators: [
+    {TelemetricEvents.Logger.JSONTranslator, :translate},
+    {Logger.Translator, :translate}
+  ],
+  console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
+
+```
+To activate this form of logging during runtime, call `setup_json_logging/0`.
+To restore your old form of logging during runtime call 
+`restore_regular_logging/0`.
+
+## Prometheus
 `Prometheus` is more hands on in it's setup. Take the configuration from above;
 where it says `metric`, you can put in a few options. Each option corresponds 
 to a `Prometheus` metric type. Each has a different tuple for 

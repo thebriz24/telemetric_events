@@ -2,6 +2,13 @@ import Config
 
 config :telemetric_events, otp_app: :example
 
+config :logger,
+  translators: [
+    {TelemetricEvents.Logger.JSONTranslator, :translate},
+    {Logger.Translator, :translate}
+  ],
+  console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
+
 config :example,
   metrics: [
     messages: [

@@ -79,6 +79,21 @@ defmodule TelemetricEvents do
   implement this logging strategy. So to get it up and going, I'm skipping 
   logging for now.
 
+  Note: As of version 0.2.0 this form of logging has been implemented.  To 
+  configure it for compile time, add this to your config: 
+  ```
+  config :logger,
+    translators: [
+      {TelemetricEvents.Logger.JSONTranslator, :translate},
+      {Logger.Translator, :translate}
+    ],
+    console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
+
+  ```
+  To activate this form of logging during runtime, call `setup_json_logging/0`.
+  To restore your old form of logging during runtime call 
+  `restore_regular_logging/0`.
+
   ## Prometheus
   `Prometheus` is more hands on in it's setup. Take the configuration from 
   above; where it says `metric`, you can put in a few options. Each option 
@@ -117,11 +132,59 @@ defmodule TelemetricEvents do
   work. If anything is wrong, please write an issue for it. I am planning on 
   actively developing this project.
   """
+  require Logger
   @app Application.compile_env!(:telemetric_events, :otp_app)
 
   @type type :: atom()
   @type event_name :: {app :: atom(), type(), action :: atom()} | type()
   @type observation :: %{action: atom()} | %{optional(atom()) => term()}
+
+  @doc """
+  Call this function during runtime to switch over to json logging.
+  """
+  @spec setup_json_logging() :: {:ok, [:logger]}
+  def setup_json_logging do
+    current_console = Application.get_env(:logger, :console)
+
+    new_console =
+      Keyword.put(current_console, :format, {TelemetricEvents.Logger.JSONFormatter, :format})
+
+    Logger.debug(
+      "Replacing :logger.console.format with TelemetricEvents.Logger.JSONFormatter in your configuration"
+    )
+
+    Application.put_env(:logger, :console, new_console)
+    Application.put_env(:logger, :placeholder, current_console)
+
+    Logger.debug(
+      "Prepending TelemetricEvents.Logger.JSONTranslator to :logger.translators in your configuration"
+    )
+
+    Logger.add_translator({TelemetricEvents.Logger.JSONTranslator, :translate})
+    Logger.debug("Restarting Logger")
+    Application.stop(:logger)
+    Application.ensure_all_started(:logger)
+  end
+
+  @doc """
+  Call this function during runtime to resume your previously configured logging.
+  """
+  @spec restore_regular_logging() :: {:ok, [:logger]}
+  def restore_regular_logging do
+    Logger.debug("Restoring :logger.console in your configuration")
+    console = Application.get_env(:logger, :placeholder)
+    Application.put_env(:logger, :console, console)
+    Application.delete_env(:logger, :placeholder)
+
+    Logger.debug(
+      "Removing TelemetricEvents.Logger.JSONTranslator to :logger.translators in your configuration"
+    )
+
+    Logger.remove_translator({TelemetricEvents.Logger.JSONTranslator, :translate})
+    Logger.debug("Restarting Logger")
+    Application.stop(:logger)
+    Application.ensure_all_started(:logger)
+  end
 
   @doc """
   Call this function in your `application.ex` file with the `module` you created 
@@ -168,8 +231,14 @@ defmodule TelemetricEvents do
     do: emit_event([@app, type, action], observation)
 
   defp event_handler(module) do
-    fn event_name, event, _metadata, _config -> module.observe(event_name, event) end
+    fn event_name, event, _metadata, _config ->
+      log(event)
+      module.observe(event_name, event)
+    end
   end
+
+  defp log(%{level: level} = event), do: Logger.log(level, fn -> event end)
+  defp log(event), do: Logger.info(fn -> event end)
 
   defp format_event_names({type, actions}, acc) do
     actions
