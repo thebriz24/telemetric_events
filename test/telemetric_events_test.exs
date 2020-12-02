@@ -38,7 +38,6 @@ defmodule TelemetricEventsTest do
     end
 
     test "now logs in a json format" do
-      TelemetricEvents.setup_json_logging()
       TelemetricEvents.setup_handler(TestModule)
 
       assert capture_log(fn ->
@@ -48,8 +47,6 @@ defmodule TelemetricEventsTest do
                })
              end) =~
                ~r/{"action":"sent","app":"example","level":"error","recipient":"anyone","timestamp":".{19}","type":"messages"}/
-
-      TelemetricEvents.restore_regular_logging()
     end
   end
 

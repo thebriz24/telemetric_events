@@ -140,53 +140,6 @@ defmodule TelemetricEvents do
   @type observation :: %{action: atom()} | %{optional(atom()) => term()}
 
   @doc """
-  Call this function during runtime to switch over to json logging.
-  """
-  @spec setup_json_logging() :: {:ok, [:logger]}
-  def setup_json_logging do
-    current_console = Application.get_env(:logger, :console)
-
-    new_console =
-      Keyword.put(current_console, :format, {TelemetricEvents.Logger.JSONFormatter, :format})
-
-    Logger.debug(
-      "Replacing :logger.console.format with TelemetricEvents.Logger.JSONFormatter in your configuration"
-    )
-
-    Application.put_env(:logger, :console, new_console)
-    Application.put_env(:logger, :placeholder, current_console)
-
-    Logger.debug(
-      "Prepending TelemetricEvents.Logger.JSONTranslator to :logger.translators in your configuration"
-    )
-
-    Logger.add_translator({TelemetricEvents.Logger.JSONTranslator, :translate})
-    Logger.debug("Restarting Logger")
-    Application.stop(:logger)
-    Application.ensure_all_started(:logger)
-  end
-
-  @doc """
-  Call this function during runtime to resume your previously configured logging.
-  """
-  @spec restore_regular_logging() :: {:ok, [:logger]}
-  def restore_regular_logging do
-    Logger.debug("Restoring :logger.console in your configuration")
-    console = Application.get_env(:logger, :placeholder)
-    Application.put_env(:logger, :console, console)
-    Application.delete_env(:logger, :placeholder)
-
-    Logger.debug(
-      "Removing TelemetricEvents.Logger.JSONTranslator to :logger.translators in your configuration"
-    )
-
-    Logger.remove_translator({TelemetricEvents.Logger.JSONTranslator, :translate})
-    Logger.debug("Restarting Logger")
-    Application.stop(:logger)
-    Application.ensure_all_started(:logger)
-  end
-
-  @doc """
   Call this function in your `application.ex` file with the `module` you created 
   using `TelemetricEvents.Prometheus`.
 

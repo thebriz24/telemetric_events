@@ -12,11 +12,11 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
   @spec format(atom(), any(), :calendar.datetime(), Keyword.t()) :: String.t()
   def format(level, message, timestamp, metadata) do
     metadata
-    |> ensure_map()
+    |> parse_metadata()
     |> Map.merge(ensure_map(message))
     |> Map.put_new("level", level)
     |> Map.put_new("timestamp", erl_to_iso8601!(timestamp))
-    |> Jason.encode!()
+    |> Jason.encode!(pretty: Mix.env() == :dev)
     |> Kernel.<>("\n")
   rescue
     _ -> "could not format with Jason: #{inspect({level, message, metadata})}\n"
@@ -35,7 +35,27 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
   end
 
   defp ensure_map(list) when is_list(list), do: %{message: List.to_string(list)}
+
   defp ensure_map(other), do: %{message: other}
+
+  defp parse_metadata(metadata), do: Enum.reduce(metadata, %{}, &parse_metadatum/2)
+
+  defguardp is_exception_tuple(tuple)
+            when tuple_size(tuple) == 2 and is_exception(elem(tuple, 0)) and
+                   is_list(elem(tuple, 1))
+
+  defguardp is_mfa_tuple(tuple)
+            when tuple_size(tuple) == 3 and is_atom(elem(tuple, 0)) and is_atom(elem(tuple, 1)) and
+                   is_integer(elem(tuple, 2))
+
+  defp parse_metadatum({k, {m, f, a} = tuple}, acc) when is_mfa_tuple(tuple),
+    do: Map.put(acc, k, "#{m}.#{f}/#{a}")
+
+  defp parse_metadatum({k, {e, _} = tuple}, acc) when is_exception_tuple(tuple),
+    do: Map.put(acc, k, inspect(e))
+
+  defp parse_metadatum({k, v}, acc) when is_pid(v), do: Map.put(acc, k, inspect(v))
+  defp parse_metadatum({k, v}, acc), do: Map.put(acc, k, v)
 
   defp erl_to_iso8601!({{_, _, _}, {_, _, _}} = datetime) do
     datetime

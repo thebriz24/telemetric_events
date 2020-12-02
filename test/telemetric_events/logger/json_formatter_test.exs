@@ -1,18 +1,10 @@
-defmodule TelemetricEvents.Logger.Test do
+defmodule TelemetricEvents.Logger.JSONFormatter.Test do
   use ExUnit.Case
-  alias __MODULE__.TestStruct
+  alias TelemetricEvents.Logger.Test.TestStruct
   import ExUnit.CaptureLog
   require Logger
 
   describe "Logging" do
-    setup do
-      TelemetricEvents.setup_json_logging()
-
-      on_exit(fn ->
-        TelemetricEvents.restore_regular_logging()
-      end)
-    end
-
     test "when message is an atom map" do
       assert capture_log(fn -> Logger.info(%{test: "test"}) end) =~
                ~r/{"level":"info","test":"test","timestamp":".{19}"}/
