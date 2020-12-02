@@ -100,16 +100,12 @@ Note: As of version 0.2.0 this form of logging has been implemented.  To
 configure it for compile time, add this to your config: 
 ```
 config :logger,
+  backends: [TelemetricEvents.Logger.JSONBackend],
   translators: [
     {TelemetricEvents.Logger.JSONTranslator, :translate},
     {Logger.Translator, :translate}
   ],
-  console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
-
 ```
-To activate this form of logging during runtime, call `setup_json_logging/0`.
-To restore your old form of logging during runtime call 
-`restore_regular_logging/0`.
 
 ## Prometheus
 `Prometheus` is more hands on in it's setup. Take the configuration from above;

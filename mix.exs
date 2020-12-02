@@ -7,7 +7,7 @@ defmodule TelemetricEvents.MixProject do
       version: "0.2.0",
       description:
         "Uses `:telemetry` to take events and combines logging and Prometheus metrics to process events",
-      elixir: ">= 1.11.0",
+      elixir: ">= 1.10.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),

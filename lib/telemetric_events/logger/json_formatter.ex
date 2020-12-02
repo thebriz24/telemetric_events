@@ -41,7 +41,7 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
   defp parse_metadata(metadata), do: Enum.reduce(metadata, %{}, &parse_metadatum/2)
 
   defguardp is_exception_tuple(tuple)
-            when tuple_size(tuple) == 2 and is_exception(elem(tuple, 0)) and
+            when tuple_size(tuple) == 2 and is_struct(elem(tuple, 0)) and
                    is_list(elem(tuple, 1))
 
   defguardp is_mfa_tuple(tuple)
