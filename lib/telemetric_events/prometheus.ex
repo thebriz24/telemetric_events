@@ -1,7 +1,10 @@
 defmodule TelemetricEvents.Prometheus do
-  @moduledoc false
+  @moduledoc """
+  A behaviour to handle Prometheus observations along with default behaviour.
+  To use the default behaviour simply call `use TelemetricEvents.Prometheus`, 
+  otherwise implement the callbacks like you would do with any behaviour.
+  """
 
-  @app Application.compile_env!(:telemetric_events, :otp_app)
   @modules %{
     counter: Prometheus.Metric.Counter,
     gauge: Prometheus.Metric.Gauge,
@@ -9,31 +12,43 @@ defmodule TelemetricEvents.Prometheus do
     summary: Prometheus.Metric.Summary
   }
 
+  @callback setup() :: :ok
+  @callback observe(event_name :: [atom()], event_measurements :: %{required(atom()) => number() | String.t()}) :: :ok
+
   defmacro __using__(_args) do
     caller = __CALLER__.module
 
+    app = Application.get_env(:telemetric_events, :otp_app)
+    [__generate_setup_functions__(app, caller), __generate_observation_functions__(app, caller)]
+  end
+
+  def __generate_setup_functions__(app, caller) do
     quote do
       def setup do
         unquote(
-          @app
+          app
           |> Application.get_env(:metrics, [])
-          |> Enum.map(fn kv -> drill_down(kv, &declare_metric(&1, &2, caller)) end)
+          |> Enum.map(&declare_metrics_for_type(app, &1, caller))
         )
       end
 
+    end
+  end
+
+  def __generate_observation_functions__(app, caller) do
+    quote do
       unquote(
-        @app
+        app
         |> Application.get_env(:metrics, [])
-        |> Enum.map(fn kv -> drill_down(kv, &declare_observation(&1, &2, caller)) end)
+        |> Enum.reduce([], &declare_observations_for_type(&2, app, &1, caller))
       )
     end
   end
 
-  defp drill_down({type, actions}, function) when is_list(actions),
-    do: Enum.map(actions, &drill_down(&1, type, function))
-
-  defp drill_down({action, metric}, type, function) when is_tuple(metric),
-    do: function.([@app, type, action], metric)
+  defp declare_metrics_for_type(app, {type, actions}, caller) when is_list(actions), 
+    do: Enum.map(actions, &declare_metric_for_action(app, &1, type, caller))
+  defp declare_metric_for_action(app, {action, metric}, type, caller), 
+    do: declare_metric([app, type, action], metric, caller)
 
   defguardp is_valid_metric(name, labels, help)
             when is_atom(name) and is_list(labels) and is_binary(help)
@@ -64,50 +79,61 @@ defmodule TelemetricEvents.Prometheus do
     end
   end
 
-  defp declare_observation(event_name, {:counter, _, _, _} = metric, caller)
+  defp declare_observations_for_type(functions, app, {type, actions}, caller) when is_list(actions), 
+    do: Enum.reduce(actions, functions, &declare_observations_for_action(&2, [app, type], &1, caller))
+
+  defp declare_observations_for_action(functions, [app, type], {action, metric}, caller),
+    do: declare_observation(functions, [app, type, action], metric, caller)
+
+  defp declare_observation(functions, event_name, {:counter, _, _, _} = metric, caller)
        when is_valid_metric(metric),
        do:
          declare_observation(
+           functions,
            event_name,
            convert_metric(metric),
            create_prefix(:inc, caller),
            caller
          )
 
-  defp declare_observation(event_name, {:gauge, _, _, _} = metric, caller)
+  defp declare_observation(functions, event_name, {:gauge, _, _, _} = metric, caller)
        when is_valid_metric(metric),
        do:
-         Enum.map(
+         Enum.reduce(
            [:inc, :dec, :set],
+           functions,
            &declare_observation(
+             &2,
              event_name,
              convert_metric(metric),
              create_prefix(&1, caller),
              caller
-           )
+           ) 
          )
 
-  defp declare_observation(event_name, {:histogram, name, labels, buckets, help} = metric, caller)
+  defp declare_observation(functions, event_name, {:histogram, name, labels, buckets, help} = metric, caller)
        when is_valid_metric(name, labels, buckets, help),
        do:
          declare_observation(
+           functions,
            event_name,
            convert_metric(metric),
            create_prefix(:observe, caller),
            caller
          )
 
-  defp declare_observation(event_name, {:summary, _, _, _} = metric, caller)
+  defp declare_observation(functions, event_name, {:summary, _, _, _} = metric, caller)
        when is_valid_metric(metric),
        do:
-         declare_observation(
+           declare_observation(
+             functions,
            event_name,
            convert_metric(metric),
            create_prefix(:observe, caller),
            caller
          )
 
-  defp declare_observation(_event_name, metric, _caller),
+  defp declare_observation(_functions, _event_name, metric, _caller),
     do:
       raise(CompileError,
         file: __ENV__.file,
@@ -118,35 +144,37 @@ defmodule TelemetricEvents.Prometheus do
           }."
       )
 
-  defp declare_observation(event_name, {module, name, labels}, {call, key} = prefix, caller) do
-    quote do
+  defp declare_observation(functions, event_name, {module, name, labels}, {call, key} = prefix, caller) do
+    [quote do
       def observe(unquote(event_name), unquote(format_pattern_match(labels, prefix, caller))) do
         unquote(module).unquote(call)(
           [name: unquote(name), labels: unquote(format_argument(labels, caller))],
           unquote(key)
         )
       end
-    end
+    end | functions]
   end
 
-  defp declare_observation(event_name, {module, name, labels}, {call, key, default}, caller) do
+  defp declare_observation(functions, event_name, {module, name, labels}, {call, key, default}, caller) do
     prefix = {call, key}
 
-    quote do
-      def observe(unquote(event_name), unquote(format_pattern_match(labels, prefix, caller))) do
-        unquote(module).unquote(call)(
-          [name: unquote(name), labels: unquote(format_argument(labels, caller))],
-          unquote(key)
-        )
-      end
-
+    functions = [quote do
       def observe(unquote(event_name), unquote(format_pattern_match(labels, caller))) do
         unquote(module).unquote(call)(
           [name: unquote(name), labels: unquote(format_argument(labels, caller))],
           unquote(default)
         )
       end
-    end
+    end | functions]
+
+    [quote do
+      def observe(unquote(event_name), unquote(format_pattern_match(labels, prefix, caller))) do
+        unquote(module).unquote(call)(
+          [name: unquote(name), labels: unquote(format_argument(labels, caller))],
+          unquote(key)
+        )
+      end
+    end | functions]
   end
 
   defp convert_metric(module) when is_atom(module), do: @modules[module]
@@ -158,7 +186,7 @@ defmodule TelemetricEvents.Prometheus do
 
   defp create_prefix(:observe, caller), do: {:observe, Macro.var(:observation, caller)}
 
-  defp create_prefix(name, caller) when name in [:inc, :dec],
+  defp create_prefix(name, caller) when name == :inc,
     do: {name, Macro.var(name, caller), 1}
 
   defp create_prefix(name, caller) when is_atom(name), do: {name, Macro.var(name, caller)}

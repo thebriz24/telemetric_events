@@ -1,7 +1,5 @@
 import Config
 
-config :telemetric_events, otp_app: :example
-
 config :logger,
   backends: [TelemetricEvents.Logger.JSONBackend],
   translators: [

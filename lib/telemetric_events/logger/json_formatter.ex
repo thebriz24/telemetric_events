@@ -1,14 +1,13 @@
 defmodule TelemetricEvents.Logger.JSONFormatter do
-  @moduledoc """
-  Attempts to encode the log message with Jason. If it's not a map then will place
-  the message in a map under the `:message` key. If using JSON logging, you must
-  add this formatter to the list of formatters in the logger console config. I.E.
-  ```
-  config :logger,
-    console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
-  ```
-  """
+  @moduledoc false
 
+  # Attempts to encode the log message with Jason. If it's not a map then will place
+  # the message in a map under the `:message` key. If using JSON logging, you must
+  # add this formatter to the list of formatters in the logger console config. I.E.
+  # ```
+  # config :logger,
+  #   console: [format: {TelemetricEvents.Logger.JSONFormatter, :format}]
+  # ```
   @spec format(atom(), any(), :calendar.datetime(), Keyword.t()) :: String.t()
   def format(level, message, timestamp, metadata) do
     metadata
@@ -19,7 +18,7 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
     |> Jason.encode!(pretty: Mix.env() == :dev)
     |> Kernel.<>("\n")
   rescue
-    _ -> "could not format with Jason: #{inspect({level, message, metadata})}\n"
+    e -> "could not format with Jason: #{inspect({level, message, metadata, e})}\n"
   end
 
   defp ensure_map([]), do: %{}
@@ -65,8 +64,7 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
 
   # Because Erlang seems to have changed their :calendar.datetime format
   defp erl_to_iso8601!({{year, month, day}, {hour, minute, second, _}}) do
-    year
-    |> NaiveDateTime.new!(month, day, hour, minute, second)
-    |> NaiveDateTime.to_iso8601()
+    {:ok, formatted} = NaiveDateTime.new(year, month, day, hour, minute, second)
+    NaiveDateTime.to_iso8601(formatted)
   end
 end

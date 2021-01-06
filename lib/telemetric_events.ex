@@ -89,7 +89,7 @@ defmodule TelemetricEvents do
       {Logger.Translator, :translate}
     ],
   ```
-  
+
   ## Prometheus
   `Prometheus` is more hands on in it's setup. Take the configuration from 
   above; where it says `metric`, you can put in a few options. Each option 
@@ -129,7 +129,6 @@ defmodule TelemetricEvents do
   actively developing this project.
   """
   require Logger
-  @app Application.compile_env!(:telemetric_events, :otp_app)
 
   @type type :: atom()
   @type event_name :: {app :: atom(), type(), action :: atom()} | type()
@@ -144,13 +143,24 @@ defmodule TelemetricEvents do
   """
   @spec setup_handler(module()) :: :ok
   def setup_handler(module) do
+    :telemetric_events
+      |> Application.get_env(:otp_app)
+      |> setup_handler(module)
+  end
+
+  @doc """
+  Same as `setup_handler/1` with the addition of allowing for a different app 
+  than your configured one.
+  """
+  @spec setup_handler(atom(), module()) :: :ok
+  def setup_handler(app, module) do
     event_names =
-      @app
+      app
       |> Application.get_env(:metrics)
-      |> Enum.reduce([], &format_event_names/2)
+      |> Enum.reduce([], &format_event_names(app, &1, &2))
 
     module.setup()
-    :telemetry.attach_many(:telemetric_events, event_names, event_handler(module), [])
+    :telemetry.attach_many([:telemetric_events, app], event_names, event_handler(module), [])
   end
 
   @doc """
@@ -173,25 +183,29 @@ defmodule TelemetricEvents do
     :telemetry.execute(event_name, enriched_observation)
   end
 
-  def emit_event(type, %{"action" => action} = observation) when is_atom(type),
-    do: emit_event([@app, type, action], observation)
+  def emit_event(type, %{"action" => action} = observation) when is_atom(type) do
+    app = Application.get_env(:telemetric_events, :otp_app)
+    emit_event([app, type, action], observation)
+  end
 
-  def emit_event(type, %{action: action} = observation) when is_atom(type),
-    do: emit_event([@app, type, action], observation)
+  def emit_event(type, %{action: action} = observation) when is_atom(type) do
+    app = Application.get_env(:telemetric_events, :otp_app)
+    emit_event([app, type, action], observation)
+  end
 
   defp event_handler(module) do
-    fn event_name, event, _metadata, _config ->
-      log(event)
+    fn event_name, event, metadata, _config ->
+      log(event, metadata)
       module.observe(event_name, event)
     end
   end
 
-  defp log(%{level: level} = event), do: Logger.log(level, fn -> event end)
-  defp log(event), do: Logger.info(fn -> event end)
+  defp log(%{level: level} = event, metadata), do: Logger.log(level, fn -> {event, metadata} end)
+  defp log(event, metadata), do: Logger.info(fn -> {event, metadata} end)
 
-  defp format_event_names({type, actions}, acc) do
+  defp format_event_names(app, {type, actions}, acc) do
     actions
-    |> Enum.map(fn {action, _metric} -> [@app, type, action] end)
+    |> Enum.map(fn {action, _metric} -> [app, type, action] end)
     |> Enum.concat(acc)
   end
 end

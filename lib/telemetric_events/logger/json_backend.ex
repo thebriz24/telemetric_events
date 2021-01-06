@@ -1,7 +1,7 @@
 defmodule TelemetricEvents.Logger.JSONBackend do
-  @moduledoc """
-  A reimplementation of `Logger.Backends.Console`
-  """
+  @moduledoc false
+  # A reimplementation of `Logger.Backends.Console`
+
   alias TelemetricEvents.Logger.JSONFormatter
 
   @behaviour :gen_event
