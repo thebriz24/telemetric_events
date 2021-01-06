@@ -14,7 +14,7 @@ by adding `telemetric_events` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:telemetric_events, "~> 0.1.0"}
+    {:telemetric_events, "~> 0.2.0"}
   ]
 end
 ```
