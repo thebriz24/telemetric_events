@@ -34,12 +34,25 @@ defmodule TelemetricEventsTest do
 
       assert capture_log(fn ->
                TelemetricEvents.emit_event([:example, :messages, :sent], %{})
-             end) =~ "[error] Handler :telemetric_events has failed and has been detached."
+             end) =~ "Handler :telemetric_events has failed and has been detached."
+    end
+
+    test "now logs in a json format" do
+      TelemetricEvents.setup_handler(TestModule)
+
+      assert capture_log(fn ->
+               TelemetricEvents.emit_event([:example, :messages, :sent], %{
+                 level: :error,
+                 recipient: "anyone"
+               })
+             end) =~
+               ~r/{"action":"sent","app":"example","level":"error","recipient":"anyone","timestamp":".{19}","type":"messages"}/
     end
   end
 
   defp tear_down(_context) do
     on_exit(fn ->
+      :telemetry.detach(:telemetric_events)
       :ets.delete_all_objects(:prometheus_counter_table)
       :ets.delete_all_objects(:prometheus_histogram_table)
     end)

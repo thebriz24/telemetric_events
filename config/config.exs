@@ -1,6 +1,11 @@
 import Config
 
-config :telemetric_events, otp_app: :example
+config :logger,
+  backends: [TelemetricEvents.Logger.JSONBackend],
+  translators: [
+    {TelemetricEvents.Logger.JSONTranslator, :translate},
+    {Logger.Translator, :translate}
+  ]
 
 config :example,
   metrics: [
@@ -18,3 +23,5 @@ config :example,
          "Buckets the time a sent message takes to round-robin to the recipient"}
     ]
   ]
+
+if Mix.env() == :test, do: import_config("test.exs")
