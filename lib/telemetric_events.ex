@@ -144,8 +144,8 @@ defmodule TelemetricEvents do
   @spec setup_handler(module()) :: :ok
   def setup_handler(module) do
     :telemetric_events
-      |> Application.get_env(:otp_app)
-      |> setup_handler(module)
+    |> Application.get_env(:otp_app)
+    |> setup_handler(module)
   end
 
   @doc """

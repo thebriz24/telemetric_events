@@ -10,12 +10,14 @@ defmodule TelemetricEvents.Logger.JSONFormatter do
   # ```
   @spec format(atom(), any(), :calendar.datetime(), Keyword.t()) :: String.t()
   def format(level, message, timestamp, metadata) do
+    pretty = Application.get_env(:telemetric_events, :pretty, false)
+
     metadata
     |> parse_metadata()
     |> Map.merge(ensure_map(message))
     |> Map.put_new("level", level)
     |> Map.put_new("timestamp", erl_to_iso8601!(timestamp))
-    |> Jason.encode!(pretty: Mix.env() == :dev)
+    |> Jason.encode!(pretty: pretty)
     |> Kernel.<>("\n")
   rescue
     e -> "could not format with Jason: #{inspect({level, message, metadata, e})}\n"
