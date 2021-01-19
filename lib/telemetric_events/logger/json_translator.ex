@@ -1,5 +1,5 @@
 defmodule TelemetricEvents.Logger.JSONTranslator do
-  @moduledoc false 
+  @moduledoc false
 
   # Uses Jason to encode a logged map. If using JSON logging, you must add this 
   # translator to the list of translators in the logger config. I.E. 

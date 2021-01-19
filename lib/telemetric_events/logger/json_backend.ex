@@ -3,7 +3,6 @@ defmodule TelemetricEvents.Logger.JSONBackend do
   # A reimplementation of `Logger.Backends.Console`
 
   alias TelemetricEvents.Logger.JSONFormatter
-
   @behaviour :gen_event
 
   defstruct buffer: [],
